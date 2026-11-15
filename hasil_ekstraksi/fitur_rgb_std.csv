@@ -1,4 +1,4 @@
-filename,label,mean_red,mean_greed,mean_blue,std_red,std_green,std_blue,edge_laplacian_variance,edge_density,glcm_contrast,glcm_homogeneity,glcm_energy,glcm_correlation
+filename,label,mean_red,mean_green,mean_blue,std_red,std_green,std_blue,edge_laplacian_variance,edge_density,glcm_contrast,glcm_homogeneity,glcm_energy,glcm_correlation
 berantakan_001.jpg,berantakan,133.025,121.0971,109.7106,55.4688,53.8199,54.113,503.4941,0.0515,103.5193,0.4845,0.0335,0.9819
 berantakan_002.jpg,berantakan,117.2852,109.3012,99.4207,64.9177,61.6087,57.2564,425.7798,0.0531,95.7767,0.3893,0.0284,0.9874
 berantakan_003.jpg,berantakan,160.6719,142.4771,134.9819,47.2719,59.3187,67.81,13.637,0.0099,11.8089,0.6836,0.0808,0.998
