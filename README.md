@@ -1,55 +1,78 @@
-# 👡 Klasifikasi Kerapian Sandal (Rapi vs Berantakan) — Ekstraksi Fitur Klasik Ringkas
+# 👁️ Citra Vision: Klasifikasi Kerapian Sandal (Rapi vs Berantakan)
+### Sistem Klasifikasi Citra Real-Time Berbasis Deep Learning YOLOv8
 
-Proyek ini mendokumentasikan dataset dan proses **ekstraksi 34 fitur klasik terbaik (*Handcrafted Features*)** pada **6 kategori fitur citra** untuk membedakan sandal dalam kondisi **Rapi** dan **Berantakan**.
+**Citra Vision** adalah aplikasi Computer Vision cerdas untuk mendeteksi dan mengklasifikasikan kondisi penataan sandal (**Rapi** vs **Berantakan**) secara otomatis menggunakan model deep learning mutakhir **YOLOv8** (`yolov8n-cls`). Sistem ini dilengkapi dengan antarmuka web interaktif yang mendukung **Input Gambar** serta pemindaian **Kamera Real-Time (Live Webcam)**.
 
 ---
 
-## 📂 Struktur Direktori Dataset & File
+## 📊 Hasil Evaluasi Model YOLOv8 (Data Uji Independen)
+
+Pengujian dilakukan pada 26 citra uji independen (*test set*):
+
+| Metrik Evaluasi | Nilai Performa | Keterangan |
+| :--- | :---: | :--- |
+| **Akurasi (Accuracy)** | **92.31%** | 24 dari 26 citra terklasifikasi dengan tepat |
+| **Presisi (Precision)** | **85.71%** | Tingkat ketepatan deteksi kelas target |
+| **Recall (Sensitivitas)**| **100.00%** | **Sempurna**: Seluruh 12 citra sandal rapi terdeteksi tepat tanpa kesalahan |
+| **F1-Score** | **92.31%** | Keseimbangan optimal antara presisi dan sensitivitas |
+| **Kecepatan Inferensi** | **~15.4 ms** | Ringan dan responsif dijalankan pada CPU standar |
+
+---
+
+## 📂 Struktur Direktori Proyek
 
 ```text
-uas/ProjectImageClasification/
-├── Data/
-│   ├── Berantakan/                  # Citra sandal berantakan
-│   └── Rapi/                        # Citra sandal rapi
-├── code/
-│   ├── ekstraksi_fitur.py           # Modul utama ekstraksi 34 fitur klasik terbaik
-│   ├── ekstraksi_fitur_sandal.ipynb # Notebook ekstraksi, visualisasi, & seleksi fitur
-│   └── rename_gambar.py             # Utilitas penamaan ulang gambar berurutan
-├── hasil_ekstraksi/
-│   ├── fitur_ekstraksi_sandal.csv   # Output 34 fitur klasik terbaik
-│   └── fitur_terpilih_sandal.csv    # Output Top-15 fitur paling diskriminatif (dari notebook)
-└── README.md                        # Dokumentasi proyek
+ProjectImageClasification/
+├── data/                             # Dataset Citra Asli
+│   ├── Berantakan/                   # 86 citra sandal berantakan
+│   └── Rapi/                         # 75 citra sandal rapi
+├── dataset_yolo/                     # Dataset Format YOLO (70:15:15)
+│   ├── train/ (Berantakan, Rapi)     # 112 citra latih
+│   ├── val/   (Berantakan, Rapi)     # 23 citra validasi
+│   └── test/  (Berantakan, Rapi)     # 26 citra uji
+├── models/                           # Bobot Model
+│   ├── best_yolo_sandal.pt           # Model terbaik YOLOv8 (Akurasi 92.31%)
+│   └── yolov8n-cls.pt                # Base pre-trained weights
+├── code/                             # Notebook & Skrip
+│   ├── main.ipynb                    # Notebook Utama Pipeline YOLOv8
+│   ├── yolo.ipynb                    # Notebook Eksplorasi & Evaluasi YOLO
+│   └── rename_gambar.py              # Utilitas standarisasi nama berkas
+├── web/                              # Aplikasi Web "Citra Vision"
+│   ├── app.py                        # Server Flask REST API (/predict, /status)
+│   ├── templates/
+│   │   └── index.html                # Antarmuka Web (Input Gambar & Kamera)
+│   └── static/
+│       ├── css/style.css             # Desain Glassmorphism & Cyberpunk Reticle HUD
+│       ├── js/app.js                 # Logika Kamera Webcam & AJAX
+│       └── samples/                  # Sampel gambar untuk uji cepat 1-klik
+└── README.md                         # Dokumentasi Lengkap Proyek
 ```
 
 ---
 
-## 🔬 34 Fitur Klasik Terbaik (6 Kategori)
+## 🚀 Panduan Menjalankan Sistem
 
-Fitur diringkas agar tidak berlebihan/redundan serta seimbang dengan jumlah sampel citra:
+### 1. Menjalankan Jupyter Notebook
+Buka file [`code/main.ipynb`](file:///D:/KULIAH/SEMESTER%205/psd/uas/ProjectImageClasification/code/main.ipynb) atau [`code/yolo.ipynb`](file:///D:/KULIAH/SEMESTER%205/psd/uas/ProjectImageClasification/code/yolo.ipynb) pada VS Code / Jupyter Lab dan jalankan seluruh sel untuk melihat alur kerja lengkap dari eksplorasi data, evaluasi model, hingga inferensi.
 
-1. **Warna (9 fitur)**:
-   `mean_red`, `std_red`, `mean_green`, `std_green`, `mean_blue`, `std_blue`, `mean_gray`, `std_gray`, `color_ccv_coherent_ratio`
-2. **Tekstur (7 fitur)**:
-   `glcm_contrast`, `glcm_homogeneity`, `glcm_energy`, `glcm_correlation`, `glcm_entropy`, `lbp_uniform_ratio`, `gabor_orientation_dominance`
-3. **Tepi & Gradien (6 fitur)**:
-   `hog_entropy`, `hog_dominant_ratio`, `edge_laplacian_var`, `edge_canny_density`, `edge_canny_spatial_spread`, `edge_canny_num_contours`
-4. **Bentuk & Geometri (6 fitur)**:
-   `shape_area_ratio`, `shape_solidity`, `shape_circularity`, `shape_eccentricity`, `shape_num_objects`, `hu_moment_1`
-5. **Titik Kunci (3 fitur)**:
-   `kp_density`, `kp_spatial_spread`, `kp_desc_diversity`
-6. **Domain Frekuensi (3 fitur)**:
-   `fft_high_energy_ratio`, `fft_spectral_entropy`, `dwt_detail_energy_ratio`
+### 2. Menjalankan Aplikasi Web "Citra Vision"
 
----
+1. Buka terminal pada folder `web`:
+   ```bash
+   cd "D:\KULIAH\SEMESTER 5\psd\uas\ProjectImageClasification\web"
+   ```
+2. Jalankan server aplikasi:
+   ```bash
+   python app.py
+   ```
+3. Buka peramban di: **`http://127.0.0.1:5000`**
 
-## 🚀 Cara Menjalankan
-
-### 1. Menjalankan Skrip Python
-Dari folder `uas/ProjectImageClasification`:
-```bash
-python code/ekstraksi_fitur.py
-```
-
-### 2. Menjalankan Jupyter Notebook
-Buka file [`code/ekstraksi_fitur_sandal.ipynb`](code/ekstraksi_fitur_sandal.ipynb) melalui VS Code / Jupyter Lab dan jalankan seluruh sel untuk menghasilkan `hasil_ekstraksi/fitur_ekstraksi_sandal.csv`, `hasil_ekstraksi/fitur_terpilih_sandal.csv`, serta melihat perbandingan akurasi *5-Fold Cross-Validation* dan visualisasi Top-15 fitur terbaik.
-
+### 3. Fitur Utama Web Citra Vision:
+1. **Mode 1: Input Gambar**:
+   - Tarik & lepas (*drag and drop*) gambar sandal atau gunakan penjelajah berkas.
+   - Tombol uji cepat (*Quick Sample Buttons*) untuk langsung menguji sampel sandal Rapi & Berantakan.
+   - Menampilkan badge hasil status `RAPI` / `BERANTAKAN`, persentase keyakinan (*confidence*), dan rincian probabilitas.
+2. **Mode 2: Kamera Real-Time**:
+   - Aliran video langsung dari webcam dengan *Futuristic AI Scanner Reticle HUD*.
+   - Pilihan: **Ambil Snapshot** atau aktifkan **Deteksi Real-Time Otomatis** (looping inferensi setiap ~350ms).
+   - Dilengkapi tabel riwayat deteksi (*Detection Log History*) dengan stempel waktu dan latensi inferensi.

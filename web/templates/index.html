@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Citra Vision - Klasifikasi Sandal Rapi vs Berantakan</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="logo-icon">👁️</div>
+        <div>
+          <h1 class="logo-title">Citra <span class="gradient-text">Vision</span></h1>
+          <p class="logo-subtitle">Sistem Klasifikasi Kerapian Sandal Real-Time Berbasis Deep Learning YOLOv8</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <!-- Voice Alert Toggle Button -->
+        <button class="badge voice-btn active" id="btn-toggle-sound" type="button" title="Klik untuk mengaktifkan/mematikan peringatan suara">
+          <span class="voice-icon" id="sound-icon">🔊</span>
+          <span id="sound-text">Suara: <strong>Aktif</strong></span>
+        </button>
+
+        <!-- Test Voice Button -->
+        <button class="badge test-voice-btn" id="btn-test-voice" type="button" title="Uji dengarkan suara peringatan">
+          <span>▶️ Tes Suara</span>
+        </button>
+
+        <div class="badge model-badge">
+          <span class="status-dot active"></span>
+          <span>Model: <strong>YOLOv8</strong></span>
+          <span class="acc-tag">Akurasi 92.31%</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+      <button class="tab-btn active" data-tab="tab-upload">
+        <span class="tab-icon">📁</span> Input Gambar
+      </button>
+      <button class="tab-btn" data-tab="tab-camera">
+        <span class="tab-icon">📷</span> Kamera Real-Time
+      </button>
+    </nav>
+
+    <!-- TAB 1: UPLOAD / INPUT GAMBAR -->
+    <main class="tab-content active" id="tab-upload">
+      <div class="grid-2-col">
+        <!-- Input Section -->
+        <section class="card input-card">
+          <div class="card-header">
+            <h2>Pilih atau Unggah Citra</h2>
+            <span class="card-hint">Format didukung: JPG, PNG, WEBP</span>
+          </div>
+
+          <!-- Drag and Drop Box -->
+          <div class="drop-zone" id="drop-zone">
+            <input type="file" id="file-input" accept="image/*" hidden>
+            <div class="drop-zone-content">
+              <div class="upload-icon">📤</div>
+              <p class="drop-text">Tarik & Lepas gambar sandal ke sini</p>
+              <span class="drop-subtext">atau klik tombol di bawah untuk memilih file</span>
+              <button class="btn btn-primary" id="btn-browse" type="button">Pilih Berkas Citra</button>
+            </div>
+          </div>
+
+          <!-- Sample Buttons -->
+          <div class="samples-wrapper">
+            <span class="samples-title">⚡ Coba Uji Cepat dengan Sampel Dataset:</span>
+            <div class="sample-btn-group">
+              <button class="btn-sample sample-rapi" data-src="/static/samples/sample_rapi_1.jpg">
+                <span>✨</span> Sampel Rapi 1
+              </button>
+              <button class="btn-sample sample-rapi" data-src="/static/samples/sample_rapi_2.jpg">
+                <span>✨</span> Sampel Rapi 2
+              </button>
+              <button class="btn-sample sample-berantakan" data-src="/static/samples/sample_berantakan_1.jpg">
+                <span>⚠️</span> Sampel Berantakan 1 (Ada Suara)
+              </button>
+              <button class="btn-sample sample-berantakan" data-src="/static/samples/sample_berantakan_2.jpg">
+                <span>⚠️</span> Sampel Berantakan 2 (Ada Suara)
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Result Section -->
+        <section class="card result-card">
+          <div class="card-header">
+            <h2>Hasil Prediksi Citra Vision</h2>
+            <span class="badge latency-badge" id="upload-latency">- ms</span>
+          </div>
+
+          <div class="preview-container">
+            <div class="image-wrapper" id="upload-preview-wrapper">
+              <img id="upload-preview-img" src="" alt="Pratinjau Citra" class="hidden">
+              <div class="placeholder-preview" id="upload-placeholder">
+                <span class="ph-icon">🖼️</span>
+                <p>Belum ada gambar yang dipilih</p>
+                <small>Unggah gambar atau pilih sampel di sisi kiri</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Prediction Result Box -->
+          <div class="prediction-box hidden" id="upload-result-box">
+            <div class="result-header">
+              <span class="result-label-title">Status Penataan:</span>
+              <div class="class-badge" id="upload-class-badge">RAPI</div>
+            </div>
+
+            <!-- Voice Alert Banner when Berantakan -->
+            <div class="voice-alert-banner hidden" id="upload-voice-banner">
+              <span class="alert-icon">🔊</span>
+              <span>Peringatan Suara: <em>"Sepatu tidak rapi, mohon dirapikan"</em></span>
+            </div>
+
+            <!-- Confidence Bar -->
+            <div class="confidence-container">
+              <div class="conf-info">
+                <span>Tingkat Keyakinan (Confidence):</span>
+                <strong id="upload-confidence-val">0%</strong>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="upload-confidence-bar" style="width: 0%;"></div>
+              </div>
+            </div>
+
+            <!-- Probability Breakdown -->
+            <div class="probabilities-grid">
+              <div class="prob-card prob-rapi">
+                <div class="prob-header">
+                  <span>🟢 Rapi</span>
+                  <span id="prob-rapi-val">0%</span>
+                </div>
+                <div class="prob-bar-bg">
+                  <div class="prob-bar-fill rapi" id="prob-rapi-bar" style="width: 0%;"></div>
+                </div>
+              </div>
+              <div class="prob-card prob-berantakan">
+                <div class="prob-header">
+                  <span>🔴 Berantakan</span>
+                  <span id="prob-berantakan-val">0%</span>
+                </div>
+                <div class="prob-bar-bg">
+                  <div class="prob-bar-fill berantakan" id="prob-berantakan-bar" style="width: 0%;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- TAB 2: KAMERA REAL-TIME -->
+    <main class="tab-content" id="tab-camera">
+      <div class="grid-2-col">
+        <!-- Live Video Viewport -->
+        <section class="card camera-card">
+          <div class="card-header">
+            <h2>Kamera Citra Real-Time</h2>
+            <div class="cam-status-pill" id="cam-status-pill">
+              <span class="status-dot"></span> <span id="cam-status-text">Kamera Mati</span>
+            </div>
+          </div>
+
+          <!-- Video Wrapper with HUD Reticle -->
+          <div class="video-container">
+            <video id="webcam-video" autoplay playsinline muted></video>
+            <canvas id="capture-canvas" hidden></canvas>
+            
+            <!-- Futuristic HUD Reticle Overlay -->
+            <div class="hud-overlay" id="hud-overlay">
+              <div class="hud-corner top-left"></div>
+              <div class="hud-corner top-right"></div>
+              <div class="hud-corner bottom-left"></div>
+              <div class="hud-corner bottom-right"></div>
+              <div class="hud-scanline"></div>
+              <div class="hud-target-box">
+                <span class="hud-crosshair"></span>
+                <span class="hud-scan-text">CITRA VISION AI SCANNER</span>
+              </div>
+              <!-- Floating Live Tag -->
+              <div class="hud-floating-tag hidden" id="hud-live-tag">
+                <span class="hud-tag-class" id="hud-tag-class">RAPI</span>
+                <span class="hud-tag-conf" id="hud-tag-conf">95.4%</span>
+              </div>
+            </div>
+
+            <!-- Camera Placeholder when off -->
+            <div class="camera-off-overlay" id="camera-off-overlay">
+              <span class="cam-off-icon">📹</span>
+              <p>Kamera Belum Aktif</p>
+              <button class="btn btn-success" id="btn-start-cam">Nyalakan Kamera</button>
+            </div>
+          </div>
+
+          <!-- Camera Controls -->
+          <div class="camera-controls">
+            <button class="btn btn-danger hidden" id="btn-stop-cam">Matikan Kamera</button>
+            <button class="btn btn-primary" id="btn-snapshot" disabled>📸 Ambil Snapshot</button>
+            <button class="btn btn-outline" id="btn-flip-cam">🔄 Ganti Kamera</button>
+            
+            <div class="toggle-control">
+              <label class="switch">
+                <input type="checkbox" id="toggle-realtime">
+                <span class="slider round"></span>
+              </label>
+              <span class="toggle-label">Deteksi Real-Time Otomatis</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Real-Time Metrics & History -->
+        <section class="card camera-result-card">
+          <div class="card-header">
+            <h2>Hasil Klasifikasi Real-Time</h2>
+            <span class="badge" id="cam-fps-badge">0 FPS | 0 ms</span>
+          </div>
+
+          <!-- Live Result Badge -->
+          <div class="live-result-display">
+            <div class="class-badge lg" id="cam-class-badge">-</div>
+            <div class="live-conf-box">
+              <span class="conf-title">Tingkat Keyakinan (Confidence)</span>
+              <div class="conf-number" id="cam-conf-number">0.0%</div>
+            </div>
+          </div>
+
+          <!-- Live Probability Bars -->
+          <div class="probabilities-grid">
+            <div class="prob-card prob-rapi">
+              <div class="prob-header">
+                <span>🟢 Rapi</span>
+                <span id="cam-prob-rapi-val">0%</span>
+              </div>
+              <div class="prob-bar-bg">
+                <div class="prob-bar-fill rapi" id="cam-prob-rapi-bar" style="width: 0%;"></div>
+              </div>
+            </div>
+            <div class="prob-card prob-berantakan">
+              <div class="prob-header">
+                <span>🔴 Berantakan</span>
+                <span id="cam-prob-berantakan-val">0%</span>
+              </div>
+              <div class="prob-bar-bg">
+                <div class="prob-bar-fill berantakan" id="cam-prob-berantakan-bar" style="width: 0%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Log History Table -->
+          <div class="history-wrapper">
+            <div class="history-header">
+              <h3>Riwayat Deteksi Terakhir</h3>
+              <button class="btn-clear-history" id="btn-clear-history">Bersihkan</button>
+            </div>
+            <div class="history-table-container">
+              <table class="history-table">
+                <thead>
+                  <tr>
+                    <th>Waktu</th>
+                    <th>Prediksi</th>
+                    <th>Confidence</th>
+                    <th>Latency</th>
+                  </tr>
+                </thead>
+                <tbody id="history-tbody">
+                  <tr class="empty-row"><td colspan="4">Belum ada deteksi yang dicatat</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>© 2026 Citra Vision - Sistem Klasifikasi Kerapian Sandal Real-Time</p>
+      <p class="footer-links">
+        <span>Arsitektur: YOLOv8 Classifier</span> •
+        <span>Backend: PyTorch & Flask</span> •
+        <span>Fitur Audio: Smart Voice Warning</span>
+      </p>
+    </footer>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
